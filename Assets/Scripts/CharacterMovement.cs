@@ -2,6 +2,7 @@ using UnityEngine;
 
 // Este script permite mover al jugador en primera persona usando el nuevo Input System.
 // Incluye detección de suelo, sprint y ajustes de velocidad según la dirección.
+// También envía los valores al Animator para controlar el Blend Tree.
 public class CharacterMovement : MonoBehaviour
 {
     // Referencia al input system personalizado
@@ -29,11 +30,19 @@ public class CharacterMovement : MonoBehaviour
     private float factorAire = 1f;
     private bool estaCorriendo = false;
 
+    // --------- ANIMACIÓN ---------
+    [Header("Animación")]
+    public Animator animator; 
+
     void Start()
     {
-        // Activamos el sistema de input
         input = new InputSystem_Actions();
         input.Enable();
+
+        if (animator == null)
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
     }
 
     void Update()
@@ -42,8 +51,16 @@ public class CharacterMovement : MonoBehaviour
         Vector3 origenRayo = transform.position + Vector3.up * offsetOrigenRayo;
         estaEnSuelo = Physics.Raycast(origenRayo, Vector3.down, largoRayoSuelo, capaSuelo, QueryTriggerInteraction.Ignore);
 
-        // Leemos el input de movimiento (WASD o joystick)
         Vector2 direccionInput = input.Player.Move.ReadValue<Vector2>();
+
+        // --------- ACTUALIZAR ANIMACIONES ---------
+        if (animator != null)
+        {
+            animator.SetFloat("MoveX", direccionInput.x, 0.1f, Time.deltaTime);
+            animator.SetFloat("MoveZ", direccionInput.y, 0.1f, Time.deltaTime);
+            animator.SetBool("IsFloating", !estaEnSuelo);
+        }
+        // ------------------------------------------
 
         // Si va hacia atrás, aplicamos el multiplicador de retroceso
         if (direccionInput.y < 0f)
